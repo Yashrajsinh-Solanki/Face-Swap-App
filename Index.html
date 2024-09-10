@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Swap App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .image-preview {
+            margin: 10px 0;
+            max-width: 100%;
+        }
+        .upload-btn {
+            padding: 10px 20px;
+            margin-top: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .upload-btn:hover {
+            background-color: #218838;
+        }
+        .result {
+            margin-top: 20px;
+        }
+        #loading {
+            display: none;
+            font-size: 18px;
+            color: #555;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Face Swap Application</h1>
+        <input type="file" id="image1" accept="image/*" onchange="previewImage('image1', 'preview1')" />
+        <img id="preview1" class="image-preview" />
+        <input type="file" id="image2" accept="image/*" onchange="previewImage('image2', 'preview2')" />
+        <img id="preview2" class="image-preview" />
+        <button class="upload-btn" onclick="swapFaces()">Swap Faces</button>
+        <div id="loading">Processing...</div>
+        <div class="result">
+            <h2>Swapped Result</h2>
+            <img id="swappedImage" class="image-preview" />
+        </div>
+    </div>
+
+    <script>
+        function previewImage(inputId, previewId) {
+            const input = document.getElementById(inputId);
+            const preview = document.getElementById(previewId);
+            const file = input.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function (e) {
+                preview.src = e.target.result;
+            }
+
+            if (file) {
+                reader.readAsDataURL(file);
+            }
+        }
+
+        async function swapFaces() {
+            const img1 = document.getElementById('image1').files[0];
+            const img2 = document.getElementById('image2').files[0];
+            const loadingMessage = document.getElementById('loading');
+            const resultImage = document.getElementById('swappedImage');
+
+            if (!img1 || !img2) {
+                alert('Please select both images.');
+                return;
+            }
+
+            // Show the loading message
+            loadingMessage.style.display = 'block';
+            resultImage.src = ''; // Clear previous result
+
+            const formData = new FormData();
+            formData.append('image1', img1);
+            formData.append('image2', img2);
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/swap-faces', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    alert('Error: ' + error.error);
+                    return;
+                }
+
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                resultImage.src = url;
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to swap faces. Please try again.');
+            } finally {
+                // Hide the loading message
+                loadingMessage.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
